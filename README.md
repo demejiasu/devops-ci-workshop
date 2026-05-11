@@ -2,7 +2,7 @@
 
 ![CI/CD](https://github.com/cesarpalacios/devops-ci-workshop/actions/workflows/ci.yml/badge.svg)
 
-**Este repositorio tiene errores. Tu misión es encontrarlos y corregirlos todos.**
+**Trabajen en grupos de 2 personas. Este repositorio tiene errores. Su misión es encontrarlos y corregirlos todos.**
 
 ---
 
