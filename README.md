@@ -1,310 +1,169 @@
-# DevOps CI Workshop
+# DevOps CI Workshop — Hackathon 🔧
 
 ![CI/CD](https://github.com/cesarpalacios/devops-ci-workshop/actions/workflows/ci.yml/badge.svg)
 
-Taller de CI/CD con GitHub Actions + Observabilidad — DevOps UNAL 2026-1
+**Este repositorio tiene errores. Tu misión es encontrarlos y corregirlos todos.**
 
 ---
 
-## Objetivo
+## Reglas
 
-Construir un pipeline CI/CD completo usando **GitHub Actions** que compile, pruebe, despliegue y monitoree una aplicación, integrando los conceptos de artefactos, contenerización y observabilidad.
+1. Hacer **Fork** de este repositorio
+2. Encontrar y corregir **TODOS** los errores
+3. Lograr que el pipeline de GitHub Actions pase **verde ✅**
+4. Hacer push con las correcciones
+5. Enviar el link del repositorio con un archivo `CORRECCIONES.md` listando cada error encontrado y qué se cambió
+
+**Gana el equipo que primero logre pipeline verde con todas las correcciones documentadas.**
 
 ---
 
 ## La Aplicación
 
-Un API REST en Python (Flask) con 3 endpoints:
+API REST en Python (Flask) con 3 endpoints que DEBEN funcionar:
 
-| Endpoint | Descripción |
-|----------|-------------|
-| `/` | Status del servicio |
-| `/health` | Health check con métricas de sistema (CPU, memoria, uptime) |
+| Endpoint | Qué debería retornar |
+|----------|---------------------|
+| `/` | `{"status": "ok", "service": "devops-api"}` |
+| `/health` | JSON con CPU, memoria, uptime y status "healthy"/"unhealthy" |
 | `/metrics` | Métricas en formato Prometheus |
 
 ---
 
-## Requisitos
+## Archivos
 
-- Cuenta de GitHub (activa, verificada)
-- Navegador con acceso a github.com
+```
+├── app.py                    ← API Flask (¿todo bien?)
+├── test_app.py               ← Tests unitarios (¿pasarán?)
+├── requirements.txt          ← Dependencias (¿está completo?)
+├── Dockerfile                ← Contenerización (¿está optimizado?)
+├── docker-compose.yml        ← API + Prometheus (¿los puertos cuadran?)
+├── prometheus.yml            ← Config Prometheus (¿las rutas son correctas?)
+└── .github/workflows/ci.yml  ← Pipeline CI/CD (¿pasará verde?)
+```
 
 ---
 
-## Actividad 1: Fork y Exploración (10 min)
+## Pistas
 
-1. Hacer **Fork** de este repositorio a su cuenta personal
-2. Clonar el fork localmente
-3. Explorar la estructura:
-   ```
-   ├── app.py              ← API Flask
-   ├── test_app.py         ← Tests unitarios
-   ├── requirements.txt    ← Dependencias Python
-   ├── Dockerfile          ← Contenerización
-   ├── docker-compose.yml  ← API + Prometheus
-   ├── prometheus.yml      ← Config Prometheus
-   └── .github/
-       └── workflows/
-           └── ci.yml      ← CREAR ESTE ARCHIVO
-   ```
+Los errores están en diferentes niveles:
+
+- **Código:** Bugs en app.py y test_app.py
+- **Configuración:** Puertos, rutas, dependencias
+- **Infraestructura:** Dockerfile, docker-compose, Prometheus
+- **Pipeline:** El workflow tiene pasos que van a fallar
+
+**No todos los errores son obvios.** Algunos solo se ven cuando ejecutás el pipeline o levantás el contenedor.
 
 ---
 
-## Actividad 2: Crear el Pipeline CI (30 min)
+## Cómo trabajar
 
-Crear el archivo `.github/workflows/ci.yml` en su fork:
+### Localmente (recomendado para debuggear)
 
-### Paso 1: Trigger y Checkout
+```bash
+# Clonar tu fork
+git clone https://github.com/TU_USUARIO/devops-ci-workshop.git
+cd devops-ci-workshop
 
-```yaml
-name: CI/CD Pipeline
+# Instalar y probar
+pip install -r requirements.txt
+python app.py
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# En otra terminal: correr tests
+pytest test_app.py -v
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v4
+# Probar endpoints
+curl http://localhost:5000/
+curl http://localhost:5000/health
+curl http://localhost:5000/metrics
+
+# Probar con Docker
+docker build -t devops-api .
+docker run -p 5000:5000 devops-api
+
+# Probar con Docker Compose
+docker compose up -d
 ```
 
-**Pregunta:** ¿Qué significa `on: push: branches: [main]`? ¿Cuándo se ejecuta este pipeline?
+### En GitHub
 
-### Paso 2: Setup Python + Tests
-
-```yaml
-    - name: Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Instalar dependencias
-      run: pip install -r requirements.txt
-    
-    - name: Ejecutar tests
-      run: pytest test_app.py -v
-```
-
-**Pregunta:** ¿Qué pasa si un test falla? ¿El pipeline continúa?
-
-### Paso 3: Build de Docker Image
-
-```yaml
-    - name: Build Docker image
-      run: docker build -t devops-api:${{ github.sha }} .
-    
-    - name: Verificar imagen
-      run: docker images | grep devops-api
-```
-
-**Pregunta:** ¿Qué es `${{ github.sha }}`? ¿Por qué usarlo como tag?
-
-### Paso 4: Test de contenedor
-
-```yaml
-    - name: Levantar contenedor
-      run: |
-        docker run -d -p 5000:5000 --name test-api devops-api:${{ github.sha }}
-        sleep 5
-    
-    - name: Test endpoint health
-      run: |
-        curl -s http://localhost:5000/health | grep healthy
-    
-    - name: Test endpoint metrics
-      run: |
-        curl -s http://localhost:5000/metrics | grep app_cpu_percent
-    
-    - name: Detener contenedor
-      if: always()
-      run: docker rm -f test-api
-```
-
-**Pregunta:** ¿Para qué sirve `if: always()`? ¿Qué pasaría sin él?
-
-### Paso 5: Artefacto
-
-```yaml
-    - name: Generar reporte
-      if: always()
-      run: |
-        echo "## Pipeline Report" > report.md
-        echo "- Commit: ${{ github.sha }}" >> report.md
-        echo "- Branch: ${{ github.ref_name }}" >> report.md
-        echo "- Status: ${{ job.status }}" >> report.md
-    
-    - name: Subir artefacto
-      uses: actions/upload-artifact@v4
-      with:
-        name: pipeline-report
-        path: report.md
-```
-
-**Pregunta:** ¿Qué es un artefacto en el contexto de CI/CD? ¿Cuándo se usaría en un proyecto real?
-
----
-
-## Actividad 3: Commit, Push y Observar (15 min)
-
-1. Hacer commit del archivo `ci.yml`
-2. Push a `main`
-3. Ir a la pestaña **Actions** en GitHub
-4. Observar la ejecución del pipeline en tiempo real
-5. Verificar que todos los pasos pasan (verde ✅)
-
-**Si falla:** Leer el log del paso que falló, identificar el error, corregir, hacer push nuevamente.
-
----
-
-## Actividad 4: Agregar Monitoreo con Prometheus (25 min)
-
-Agregar un paso al pipeline para validar las métricas con Prometheus:
-
-```yaml
-    - name: Levantar con Docker Compose
-      run: |
-        docker compose up -d
-        sleep 10
-    
-    - name: Verificar Prometheus targets
-      run: |
-        curl -s http://localhost:9090/api/v1/targets | grep up
-    
-    - name: Consultar métricas
-      run: |
-        curl -s "http://localhost:9090/api/v1/query?query=app_cpu_percent" | head -20
-```
-
-**Pregunta:** ¿Qué hace Prometheus con el endpoint `/metrics`? ¿Qué es un `scrape`?
-
----
-
-## Actividad 5: Agregar Badges (5 min)
-
-Modificar el `README.md` de su fork y cambiar `TU_USUARIO` por su usuario de GitHub:
-
-```markdown
-![CI/CD](https://github.com/TU_USUARIO/devops-ci-workshop/actions/workflows/ci.yml/badge.svg)
-```
-
-Esto muestra un badge verde/rojo según el estado del último pipeline.
+1. Hacer correcciones
+2. Commit + push a `main`
+3. Ir a la pestaña **Actions** y ver si el pipeline pasa
+4. Si falla: leer los logs, corregir, push nuevamente
 
 ---
 
 ## Entregable
 
-Al finalizar la clase, cada grupo debe tener:
+Crear un archivo `CORRECCIONES.md` en el repositorio con este formato:
 
-1. ✅ Repositorio fork con pipeline funcional (verde en Actions)
-2. ✅ Pipeline que: ejecuta tests → buildea Docker → testa contenedor → genera artefacto
-3. ✅ Métricas expuestas en `/metrics` (formato Prometheus)
-4. ✅ Badge en el README
-5. ✅ Captura de pantalla del pipeline ejecutado
+```markdown
+# Correcciones
 
-**Enviar:** Link del repositorio al correo del docente antes de las 8:00 PM.
+## Error 1
+- **Archivo:** app.py
+- **Problema:** El puerto estaba en 5001 en vez de 5000
+- **Solución:** Cambié `port=5001` por `port=5000`
 
----
-
-## Pipeline Final Completo
-
-```yaml
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Instalar dependencias
-      run: pip install -r requirements.txt
-    
-    - name: Ejecutar tests
-      run: pytest test_app.py -v
-    
-    - name: Build Docker image
-      run: docker build -t devops-api:${{ github.sha }} .
-    
-    - name: Levantar contenedor
-      run: |
-        docker run -d -p 5000:5000 --name test-api devops-api:${{ github.sha }}
-        sleep 5
-    
-    - name: Test endpoints
-      run: |
-        curl -s http://localhost:5000/health | grep healthy
-        curl -s http://localhost:5000/metrics | grep app_cpu_percent
-    
-    - name: Detener contenedor
-      if: always()
-      run: docker rm -f test-api
-    
-    - name: Generar reporte
-      if: always()
-      run: |
-        echo "## Pipeline Report" > report.md
-        echo "- Commit: ${{ github.sha }}" >> report.md
-        echo "- Branch: ${{ github.ref_name }}" >> report.md
-        echo "- Status: ${{ job.status }}" >> report.md
-    
-    - name: Subir artefacto
-      uses: actions/upload-artifact@v4
-      with:
-        name: pipeline-report
-        path: report.md
+## Error 2
+- **Archivo:** ...
+- **Problema:** ...
+- **Solución:** ...
 ```
 
----
-
-## Ejecutar localmente
-
-```bash
-# Sin Docker
-pip install -r requirements.txt
-python app.py
-
-# Con Docker
-docker build -t devops-api .
-docker run -p 5000:5000 devops-api
-
-# Con Docker Compose (API + Prometheus)
-docker compose up -d
-# API: http://localhost:5000
-# Prometheus: http://localhost:9090
-
-# Tests
-pytest test_app.py -v
-```
+**Enviar:** Link del repositorio + captura del pipeline verde.
 
 ---
 
-## Conceptos Cubiertos
+## Pipeline que debe pasar
 
-| Tema | Actividad |
-|------|-----------|
-| Git/GitHub | Fork, branches, commits |
-| Pipelines CI/CD | GitHub Actions workflow |
-| Docker | Build + run container |
-| Artefactos | Upload artifact |
-| Observabilidad | Prometheus + métricas + /health |
+El pipeline hace:
+
+1. ✅ Checkout del código
+2. ✅ Setup Python 3.11
+3. ✅ Instalar dependencias
+4. ✅ Ejecutar tests con pytest
+5. ✅ Build de Docker image
+6. ✅ Levantar contenedor y testear endpoints
+7. ✅ Generar reporte y subir como artefacto
+
+**Cuando los 7 pasos pasen verde, ganaron.**
+
+---
+
+## Pistas extra (si están bloqueados)
+
+<details>
+<summary>💡 Pista 1: Endpoints</summary>
+Revisá que los endpoints en app.py coincidan con los que testean test_app.py y ci.yml. ¿`/metrics` es lo mismo que `/metric`?
+</details>
+
+<details>
+<summary>💡 Pista 2: Puertos</summary>
+Revisá TODOS los puertos: app.py, Dockerfile, docker-compose.yml, ci.yml. Deben ser consistentes.
+</details>
+
+<details>
+<summary>💡 Pista 3: Dependencias</summary>
+¿pytest está en requirements.txt? ¿Y en el pipeline se puede ejecutar si no está instalado?
+</details>
+
+<details>
+<summary>💡 Pista 4: Tests</summary>
+Revisá las aserciones de test_app.py. ¿El endpoint `/` realmente devuelve `status: "running"`? ¿`/health` tiene campo `uptime_seconds`?
+</details>
+
+<details>
+<summary>💡 Pista 5: Dockerfile</summary>
+¿`python:3.11` es lo mismo que `python:3.11-slim`? Funciona, pero no es lo óptimo. Hay errores más graves primero.
+</details>
+
+<details>
+<summary>💡 Pista 6: Prometheus</summary>
+En docker-compose, los servicios se comunican por nombre de servicio, no por localhost. ¿El target en prometheus.yml es correcto para docker-compose?
+</details>
 
 ---
 

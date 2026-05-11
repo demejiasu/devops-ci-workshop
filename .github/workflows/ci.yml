@@ -22,20 +22,21 @@ jobs:
       run: pip install -r requirements.txt
     
     - name: Ejecutar tests
-      run: pytest test_app.py -v
+      run: pytest test_app.py
     
     - name: Build Docker image
-      run: docker build -t devops-api:${{ github.sha }} .
+      run: docker build -t devops-api:latest .
     
     - name: Levantar contenedor
       run: |
-        docker run -d -p 5000:5000 --name test-api devops-api:${{ github.sha }}
-        sleep 5
+        docker run -d -p 5000:5000 --name test-api devops-api:latest
+        sleep 3
     
-    - name: Test endpoints
-      run: |
-        curl -s http://localhost:5000/health | grep healthy
-        curl -s http://localhost:5000/metrics | grep app_cpu_percent
+    - name: Test endpoint health
+      run: curl -s http://localhost:5000/health
+    
+    - name: Test endpoint metrics
+      run: curl -s http://localhost:5000/metrics
     
     - name: Detener contenedor
       if: always()
@@ -54,24 +55,3 @@ jobs:
       with:
         name: pipeline-report
         path: report.md
-
-    - name: Levantar con Docker Compose
-      run: |
-        docker compose up -d
-        sleep 10
-
-    - name: correr prometheus
-      run: |
-        docker run -d -p 9090:9090 --name test-api devops-api:${{ github.sha }}
-        
-    - name: Verificar Prometheus targets
-      run: |
-        curl -s http://localhost:9090/api/v1/targets | grep up
-        
-    - name: Consultar métricas
-      run: |
-        curl -s "http://localhost:9090/api/v1/query?query=app_cpu_percent" | head -20
-    
-    - name: Consultar métricas
-      run: |
-        curl -s "http://localhost:9090/api/v1/query?query=app_cpu_percent" | head -20
