@@ -14,7 +14,7 @@
 4. Hacer push con las correcciones
 5. Enviar el link del repositorio con un archivo `CORRECCIONES.md` listando cada error encontrado y qué se cambió
 
-**Gana el equipo que primero logre pipeline verde con todas las correcciones documentadas.**
+**El taller termina cuando logren pipeline verde con todos los pasos pasando. Documenten cada corrección en `CORRECCIONES.md`.**
 
 ---
 
