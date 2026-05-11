@@ -54,3 +54,24 @@ jobs:
       with:
         name: pipeline-report
         path: report.md
+
+    - name: Levantar con Docker Compose
+      run: |
+        docker compose up -d
+        sleep 10
+
+    - name: correr prometheus
+      run: |
+        docker run -d -p 9090:9090 --name test-api devops-api:${{ github.sha }}
+        
+    - name: Verificar Prometheus targets
+      run: |
+        curl -s http://localhost:9090/api/v1/targets | grep up
+        
+    - name: Consultar métricas
+      run: |
+        curl -s "http://localhost:9090/api/v1/query?query=app_cpu_percent" | head -20
+    
+    - name: Consultar métricas
+      run: |
+        curl -s "http://localhost:9090/api/v1/query?query=app_cpu_percent" | head -20
