@@ -102,6 +102,10 @@ Crear un archivo `CORRECCIONES.md` en el repositorio con este formato:
 ```markdown
 # Correcciones
 
+**Integrantes:**
+- Nombre 1
+- Nombre 2
+
 ## Error 1
 - **Archivo:** app.py
 - **Problema:** El puerto estaba en 5001 en vez de 5000
