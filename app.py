@@ -1,0 +1,37 @@
+from flask import Flask, jsonify
+import psutil
+import time
+
+app = Flask(__name__)
+START_TIME = time.time()
+
+@app.route('/')
+def home():
+    return jsonify({"status": "ok", "service": "devops-api"})
+
+@app.route('/health')
+def health():
+    uptime = time.time() - START_TIME
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory().percent
+    return jsonify({
+        "uptime_seconds": round(uptime, 1),
+        "cpu_percent": cpu,
+        "memory_percent": mem,
+        "status": "healthy" if cpu < 80 and mem < 80 else "unhealthy"
+    })
+
+@app.route('/metrics')
+def metrics():
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory().percent
+    return f"""# HELP app_cpu_percent CPU usage percentage
+# TYPE app_cpu_percent gauge
+app_cpu_percent {cpu}
+# HELP app_memory_percent Memory usage percentage
+# TYPE app_memory_percent gauge
+app_memory_percent {mem}
+"""
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
