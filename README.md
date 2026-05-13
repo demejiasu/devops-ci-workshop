@@ -171,4 +171,4 @@ En docker-compose, los servicios se comunican por nombre de servicio, no por loc
 
 ---
 
-*DevOps — Universidad Nacional de Colombia — Sede Manizales — 2026-1*
+*DevOps — Universidad Nacional de Colombia — Sede Manizales — 2026-1**
