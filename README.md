@@ -1,106 +1,174 @@
+# DevOps CI Workshop — Hackathon 🔧
+
+![CI/CD](https://github.com/cesarpalacios/devops-ci-workshop/actions/workflows/ci.yml/badge.svg)
+
+**Trabajen en grupos de 2 personas. Este repositorio tiene errores. Su misión es encontrarlos y corregirlos todos.**
+
+---
+
+## Reglas
+
+1. Hacer **Fork** de este repositorio
+2. Encontrar y corregir **TODOS** los errores
+3. Lograr que el pipeline de GitHub Actions pase **verde ✅**
+4. Hacer push con las correcciones
+5. Enviar el link del repositorio con un archivo `CORRECCIONES.md` listando cada error encontrado y qué se cambió
+
+**El taller termina cuando logren pipeline verde con todos los pasos pasando. Documenten cada corrección en `CORRECCIONES.md`.**
+
+---
+
+## La Aplicación
+
+API REST en Python (Flask) con 3 endpoints que DEBEN funcionar:
+
+| Endpoint | Qué debería retornar |
+|----------|---------------------|
+| `/` | `{"status": "ok", "service": "devops-api"}` |
+| `/health` | JSON con CPU, memoria, uptime y status "healthy"/"unhealthy" |
+| `/metrics` | Métricas en formato Prometheus |
+
+---
+
+## Archivos
+
+```
+├── app.py                    ← API Flask (¿todo bien?)
+├── test_app.py               ← Tests unitarios (¿pasarán?)
+├── requirements.txt          ← Dependencias (¿está completo?)
+├── Dockerfile                ← Contenerización (¿está optimizado?)
+├── docker-compose.yml        ← API + Prometheus (¿los puertos cuadran?)
+├── prometheus.yml            ← Config Prometheus (¿las rutas son correctas?)
+└── .github/workflows/ci.yml  ← Pipeline CI/CD (¿pasará verde?)
+```
+
+---
+
+## Pistas
+
+Los errores están en diferentes niveles:
+
+- **Código:** Bugs en app.py y test_app.py
+- **Configuración:** Puertos, rutas, dependencias
+- **Infraestructura:** Dockerfile, docker-compose, Prometheus
+- **Pipeline:** El workflow tiene pasos que van a fallar
+
+**No todos los errores son obvios.** Algunos solo se ven cuando ejecutás el pipeline o levantás el contenedor.
+
+---
+
+## Cómo trabajar
+
+### Localmente (recomendado para debuggear)
+
+```bash
+# Clonar tu fork
+git clone https://github.com/TU_USUARIO/devops-ci-workshop.git
+cd devops-ci-workshop
+
+# Instalar y probar
+pip install -r requirements.txt
+python app.py
+
+# En otra terminal: correr tests
+pytest test_app.py -v
+
+# Probar endpoints
+curl http://localhost:5000/
+curl http://localhost:5000/health
+curl http://localhost:5000/metrics
+
+# Probar con Docker
+docker build -t devops-api .
+docker run -p 5000:5000 devops-api
+
+# Probar con Docker Compose
+docker compose up -d
+```
+
+### En GitHub
+
+1. Hacer correcciones
+2. Commit + push a `main`
+3. Ir a la pestaña **Actions** y ver si el pipeline pasa
+4. Si falla: leer los logs, corregir, push nuevamente
+
+---
+
+## Entregable
+
+Crear un archivo `CORRECCIONES.md` en el repositorio con este formato:
+
+```markdown
 # Correcciones
 
 **Integrantes:**
-- Frankin Libreros Morales  
-- Lina Peréz Henao  
-- Daniel Eduardo Mejía  
-
----
+- Nombre 1
+- Nombre 2
 
 ## Error 1
-- **Archivo:** app.py  
-- **Problema:** El endpoint `/` devolvía `"status": "ok"` pero los tests esperaban `"running"`.  
-- **Solución:** Se ajustó el valor de retorno para cumplir con las pruebas del pipeline (`status` esperado en test_app.py).
-
----
+- **Archivo:** app.py
+- **Problema:** El puerto estaba en 5001 en vez de 5000
+- **Solución:** Cambié `port=5001` por `port=5000`
 
 ## Error 2
-- **Archivo:** app.py  
-- **Problema:** El endpoint `/health` no incluía el campo `uptime_seconds` requerido por los tests.  
-- **Solución:** Se agregó cálculo de uptime usando `time.time()` y se incluyó en la respuesta como `uptime_seconds`.
+- **Archivo:** ...
+- **Problema:** ...
+- **Solución:** ...
+```
+
+**Enviar:** Link del repositorio + captura del pipeline verde.
 
 ---
 
-## Error 3
-- **Archivo:** app.py  
-- **Problema:** El endpoint `/metrics` no tenía el Content-Type correcto para Prometheus.  
-- **Solución:** Se forzó el header `"Content-Type": "text/plain"` para que Prometheus pueda scrapear correctamente.
+## Pipeline que debe pasar
+
+El pipeline hace:
+
+1. ✅ Checkout del código
+2. ✅ Setup Python 3.11
+3. ✅ Instalar dependencias
+4. ✅ Ejecutar tests con pytest
+5. ✅ Build de Docker image
+6. ✅ Levantar contenedor y testear endpoints
+7. ✅ Generar reporte y subir como artefacto
+
+**Cuando los 7 pasos pasen verde, ganaron.**
 
 ---
 
-## Error 4
-- **Archivo:** app.py  
-- **Problema:** El endpoint `/metrics` inicialmente devolvía formato incorrecto (Flask lo interpretaba como HTML).  
-- **Solución:** Se ajustó el retorno a formato Prometheus válido (texto plano estructurado con HELP y TYPE).
+## Pistas extra (si están bloqueados)
+
+<details>
+<summary>💡 Pista 1: Endpoints</summary>
+Revisá que los endpoints en app.py coincidan con los que testean test_app.py y ci.yml. ¿`/metrics` es lo mismo que `/metric`?
+</details>
+
+<details>
+<summary>💡 Pista 2: Puertos</summary>
+Revisá TODOS los puertos: app.py, Dockerfile, docker-compose.yml, ci.yml. Deben ser consistentes.
+</details>
+
+<details>
+<summary>💡 Pista 3: Dependencias</summary>
+¿pytest está en requirements.txt? ¿Y en el pipeline se puede ejecutar si no está instalado?
+</details>
+
+<details>
+<summary>💡 Pista 4: Tests</summary>
+Revisá las aserciones de test_app.py. ¿El endpoint `/` realmente devuelve `status: "running"`? ¿`/health` tiene campo `uptime_seconds`?
+</details>
+
+<details>
+<summary>💡 Pista 5: Dockerfile</summary>
+¿`python:3.11` es lo mismo que `python:3.11-slim`? Funciona, pero no es lo óptimo. Hay errores más graves primero.
+</details>
+
+<details>
+<summary>💡 Pista 6: Prometheus</summary>
+En docker-compose, los servicios se comunican por nombre de servicio, no por localhost. ¿El target en prometheus.yml es correcto para docker-compose?
+</details>
 
 ---
 
-## Error 5
-- **Archivo:** test_app.py  
-- **Problema:** Inconsistencia entre tests y API (esperaban campos y valores diferentes a los implementados inicialmente).  
-- **Solución:** Se corrigieron las aserciones para alinearlas con la API real:  
-  - `/` → status `"running"`  
-  - `/health` → `uptime_seconds` presente  
-  - `/metrics` → contiene `app_cpu_percent`
-
----
-
-## Error 6
-- **Archivo:** prometheus.yml  
-- **Problema:** Prometheus no estaba apuntando correctamente al servicio dentro de Docker (uso incorrecto de localhost o endpoint mal definido).  
-- **Solución:** Se configuró correctamente el target como `api:5000` usando el nombre del servicio Docker Compose.
-
----
-
-## Error 7
-- **Archivo:** docker-compose.yml  
-- **Problema:** Los servicios no estaban correctamente enlazados entre API y Prometheus.  
-- **Solución:** Se ajustaron los nombres de servicios para permitir comunicación interna por DNS de Docker (`api` como hostname).
-
----
-
-## Error 8
-- **Archivo:** Docker / Puertos  
-- **Problema:** Conflicto de puerto 5000 en el host debido a servicios locales (Flask/Docker/WSL).  
-- **Solución:** Se cambió el mapeo de puertos a `5001:5000` para evitar colisión.
-
----
-
-## Error 9
-- **Archivo:** CI/CD Pipeline (`.github/workflows/ci.yml`)  
-- **Problema:** Los tests podían fallar si pytest no estaba instalado explícitamente en el runner.  
-- **Solución:** Se agregó instalación de pytest en el step de dependencias.
-
----
-
-## Error 10
-- **Archivo:** CI/CD Pipeline (`.github/workflows/ci.yml`)  
-- **Problema:** Los tests de endpoints no fallaban correctamente si el servicio no respondía (curl sin validación).  
-- **Solución:** Se agregó `curl -f` para asegurar que el pipeline falle si el endpoint no responde correctamente.
-
----
-
-## Error 11
-- **Archivo:** CI/CD Pipeline (`.github/workflows/ci.yml`)  
-- **Problema:** El contenedor podía no iniciar completamente antes de ejecutar tests.  
-- **Solución:** Se aumentó el `sleep` y se estabilizó el arranque del contenedor antes de ejecutar validaciones.
-
----
-
-## Resultado final
-
-- Todos los endpoints funcionando correctamente  
-- Tests unitarios pasando  
-- Docker Compose operativo  
-- Prometheus en estado **UP**  
-- Pipeline CI/CD ejecutándose correctamente en GitHub Actions  
-
----
-
-## Estado final del proyecto
-
-✔ API REST funcional  
-✔ Métricas compatibles con Prometheus  
-✔ Infraestructura Docker correcta  
-✔ Pipeline CI/CD en verde  
-✔ Entrega lista
+*DevOps — Universidad Nacional de Colombia — Sede Manizales — 2026-1*
