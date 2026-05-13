@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'devops-api'
+  - job_name: "flask-api"
+    metrics_path: /metrics
     static_configs:
-      - targets: ['localhost:5000']
-    metrics_path: '/metric'
+      - targets: ["api:5000"]
